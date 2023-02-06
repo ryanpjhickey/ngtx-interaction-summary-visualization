@@ -1,0 +1,1142 @@
+<!doctype html>
+<html>
+	<head>
+		<title>HTML Report</title>
+		<link rel="stylesheet" href="styles.css">
+		<script src="scripts.js" type="text/javascript"></script>
+		<script src="veevaMessages.js" type="text/javascript"></script>
+		<script src="jquery-ui-1.11.4/external/jquery/jquery.js"></script>
+		<script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
+		<script src="q/q.js"></script>
+	</head>
+
+	<script src="scripts/lib.js"></script>
+
+	<script>
+		var ds = window.ds;
+
+		function init(){
+			setTimeout(function(){
+				divEle = document.getElementById("ResultsDiv");
+
+				initMsgs(function(){
+					initFieldLabels(function(){
+						updateUIWithMsgs();
+						initCallSummaryData(function(){
+							initPicklistLabels(function(){
+								initCallSummaryFilters(calls);
+								updateCallDataUI(calls);
+								setTimeout(function(){
+									initAEData(function(){
+										updateAeDataUI(sentEmails);
+									});
+								}, 500);
+							});
+						});
+					});
+				});
+			}, 500);
+		}
+
+		function initMsgs(callback){
+			var msgsToGet = [
+				buildVeevaMsgToGet("Period", "Analytics", "Period"),
+				buildVeevaMsgToGet("Total", "Analytics", "Total"),
+				buildVeevaMsgToGet("Calls", "Analytics", "Calls"),
+				buildVeevaMsgToGet("SAMPLE", "SAMPLES_MGMT", "Samples"),
+				buildVeevaMsgToGet("CALLS_WITH_SAMPLES", "FieldReporting", "Calls with Samples"),
+				buildVeevaMsgToGet("CALLS_WITH_CLM", "FieldReporting", "Calls with CLM"),
+				buildVeevaMsgToGet("View", "Common", "View"),
+				buildVeevaMsgToGet("FILTERS", "Analytics", "Filters"),
+				buildVeevaMsgToGet("CLEAR_FILTER", "Common", "Clear"),
+				buildVeevaMsgToGet("QTY", "SAMPLES_MGMT", "QTY"),
+				buildVeevaMsgToGet("CALL_DATE", "VIEW_SIG", "Call Date"),
+				buildVeevaMsgToGet("ALL_ACTIVITY", "FieldReporting", "All Activity"),
+				buildVeevaMsgToGet("MCCP_MY_ACTIVITY", "Multichannel", "My Activity"),
+				buildVeevaMsgToGet("APPROVED_EMAIL_PAGE_SUBTITLE", "ApprovedEmail", "Approved Email"),
+				buildVeevaMsgToGet("CALL_SUMMARY", "FieldReporting", "Call Summary"),
+				buildVeevaMsgToGet("RECENT_FRAGMENTS", "FieldReporting", "Recent Fragments"),
+				buildVeevaMsgToGet("TOP_SAMPLES", "FieldReporting", "Top Samples"),
+				buildVeevaMsgToGet("RECENT_KEY_MESSAGES", "FieldReporting", "Recent Key Messages"),
+				buildVeevaMsgToGet("SUMMARY", "FieldReporting", "Summary"),
+				buildVeevaMsgToGet("NO_RECORDS", "Common", "No records to display"),
+				buildVeevaMsgToGet("APPROVED_EMAIL_SENT", "Multichannel", "Sent"),
+				buildVeevaMsgToGet("SET_SAMPLES", "TABLET", "Samples"),
+				buildVeevaMsgToGet("TopXProducts", "Analytics", "Top {0} Products"),
+				buildVeevaMsgToGet("NAME", "Common", "Name")
+			];
+			
+			initMsgCache(msgsToGet, function(){
+				callback();
+			});
+		}
+
+        function initFieldLabels (callback) {
+          var mySetupProductConfig = {
+            object: 'My_Setup_Products_vod__c',
+            fields: ['Product_vod__c']
+          }
+
+          ds.getFieldLabels(mySetupProductConfig).then(function (results) {
+			  fieldLabels.push({labelName: 'prodLabel', labelValue: results[0].display});
+
+              var callConfig = {
+                  object: 'Call2_vod__c',
+                  fields: ['Status_vod__c', 'Call_Type_vod__c']
+              }
+
+            ds.getFieldLabels(callConfig).then(function (results) {
+
+                fieldLabels.push({labelName: 'callStatusLabel', labelValue: results[0].display})
+                fieldLabels.push({labelName: 'callTypeLabel', labelValue: results[1].display})
+
+				var sndEmailLabelsToGet = ['Email_Fragments_vod__c'];
+                var openedIndex;
+                var clickedIndex;
+              doesFieldExist('Sent_Email_vod__c', ['Clicked_vod__c'], function (fldExists) {
+                if (fldExists) {
+                  sndEmailLabelsToGet.push('Clicked_vod__c')
+                }
+                doesFieldExist('Sent_Email_vod__c', ['Opened_vod__c'], function (fldExists) {
+                  if (fldExists) {
+                    sndEmailLabelsToGet.push('Opened_vod__c')
+                  }
+
+                  openedIndex = sndEmailLabelsToGet.indexOf('Opened_vod__c');
+                  clickedIndex = sndEmailLabelsToGet.indexOf('Clicked_vod__c');
+
+                  ds.getFieldLabels({object: 'Sent_Email_vod__c', fields: sndEmailLabelsToGet}).then(function (results) {
+
+					  fieldLabels.push({labelName: 'emailsWithFragmentsLabel', labelValue: results[0].display});
+					  if (openedIndex !== -1) {
+                          fieldLabels.push({labelName: 'emailsOpenedLabel', labelValue: results[openedIndex].display});
+					  }
+
+					  if (clickedIndex !== -1) {
+                          fieldLabels.push({labelName: 'emailsClickedLabel', labelValue: results[clickedIndex].display});
+					  }
+
+					  callback();
+				  }, showFailure);
+                });
+              });
+            }, showFailure);
+          }, showFailure);
+        }
+
+		function getPicklistLabel(obj, fld, apiName){
+			for (var index in picklistLabels){
+				if (picklistLabels[index].objName == obj && picklistLabels[index].fldName == fld && picklistLabels[index].apiName == apiName){
+					return picklistLabels[index].label;
+				}
+			}
+		}
+
+		function initPicklistLabels(callback){
+			ds.getPicklistValueLabels("Call2_vod__c", "Status_vod__c").then(function(results){
+
+				for (var index in results["Call2_vod__c"]["Status_vod__c"]){
+					picklistLabels.push({objName: "Call2_vod__c", fldName: "Status_vod__c", apiName: index, label: results["Call2_vod__c"]["Status_vod__c"][index]});
+				}
+
+                ds.getPicklistValueLabels('Call2_vod__c', 'Call_Type_vod__c').then(function(results){
+
+					for (var index in results['Call2_vod__c']['Call_Type_vod__c']){
+						picklistLabels.push({objName: 'Call2_vod__c', fldName: 'Call_Type_vod__c', apiName: index, label: results["Call2_vod__c"]["Call_Type_vod__c"][index]});
+					}
+
+                    callback();
+				}, showFailure);
+			}, showFailure);
+		}
+
+		/**
+		 * Get all data for call summary section
+		 */
+		function initCallSummaryData(callback){
+			getCurrentAccountId(function(id){
+				acctId = id;
+
+				getCallsForAccount(id, function(allCalls){
+					calls = allCalls;
+
+					getCallSamplesForCalls(allCalls, function(allCallSamples){
+						callSamples = allCallSamples;
+
+						getCallDetailsForCalls(allCalls, function(allCallDetails){
+							callDetails = allCallDetails;
+
+							getProductsForSamples(callSamples, callDetails, function(allProds){
+								prods = allProds;
+
+								getKeyMsgsForCalls(calls, function(allKeyMsgs){
+									keyMsgs = allKeyMsgs;
+									callback();
+								});
+							});
+						});
+					});
+				});
+			});
+		}
+
+		/**
+		 * Get all data for Approved Email section
+		 */
+		function initAEData(callback){
+			getApprovedEmails(function(){
+				getApprovedDocs(function(){
+					callback();
+				});
+			});
+		}
+
+		/**
+		 * Set values for Call Summary filters based on calls
+		 */
+		function initCallSummaryFilters(allCalls){
+			var callTypes = [];
+			var callStatus = [];
+			var callTypeSelect = document.getElementById("callTypeSelect");
+			var callStatusSelect = document.getElementById("callStatusSelect");
+			
+			for (var index in allCalls){
+				if (callTypes.indexOf(allCalls[index].Call_Type_vod__c) == -1){
+					callTypes.push(allCalls[index].Call_Type_vod__c);
+				}
+				if (callStatus.indexOf(allCalls[index].Status_vod__c) == -1){
+					callStatus.push(allCalls[index].Status_vod__c);
+				}
+			}
+
+			for (var callTypeIndex in callTypes){
+				var opt = document.createElement('option');
+	    		opt.value = callTypes[callTypeIndex];
+				opt.innerHTML = getPicklistLabel("Call2_vod__c", "Call_Type_vod__c", callTypes[callTypeIndex]);
+	    		callTypeSelect.appendChild(opt);
+			}
+
+			for (var callStatusIndex in callStatus){
+				var opt = document.createElement('option');
+	    		opt.value = callStatus[callStatusIndex];
+				opt.innerHTML = getPicklistLabel("Call2_vod__c", "Status_vod__c", callStatus[callStatusIndex]);
+	    		callStatusSelect.appendChild(opt);
+			}
+		}
+
+		function updateUIWithMsgs(){
+			document.getElementById("callSummaryTimePeriodLabel").innerHTML = getMsg("Period", "Analytics") + ": ";
+			document.getElementById("callsTotalLabel").innerHTML = getMsg("Total", "Analytics");
+			document.getElementById("callsWithSamplesLabel").innerHTML = getMsg("CALLS_WITH_SAMPLES", "FieldReporting");
+			document.getElementById("callsWithCLMLabel").innerHTML = getMsg("CALLS_WITH_CLM", "FieldReporting");
+			document.getElementById("callSummaryViewLabel").innerHTML = getMsg("View", "Common");
+			document.getElementById("callSummaryFiltersLabel").innerHTML = getMsg("FILTERS", "Analytics");
+			document.getElementById("callSummaryClearFiltersLabel").innerHTML = getMsg("CLEAR_FILTER", "Common");
+			document.getElementById("sampleTableQTYLabel").innerHTML = getMsg("QTY", "SAMPLES_MGMT");
+			document.getElementById("productsDetailedTableCallsLabel").innerHTML = getMsg("Calls", "Analytics");
+			document.getElementById("productsDetailedTableMostRecentCallLabel").innerHTML = getMsg("CALL_DATE", "VIEW_SIG");
+			document.getElementById("keyMsgTableCallDateLabel").innerHTML = getMsg("CALL_DATE", "VIEW_SIG");
+			document.getElementById("keyMsgTableMessageLabel").innerHTML = getMsg("NAME", "Common");
+			document.getElementById("totalCallsLabel").innerHTML = getMsg("Calls", "Analytics");
+			document.getElementById("callAllActivityBtn").innerHTML = getMsg("ALL_ACTIVITY", "FieldReporting");
+			document.getElementById("callMyActivityBtn").innerHTML = getMsg("MCCP_MY_ACTIVITY", "Multichannel");
+			document.getElementById("callSummaryLabel").innerHTML = getMsg("CALL_SUMMARY", "FieldReporting");
+			document.getElementById("topProdsLabel").innerHTML = getMsg("TopXProducts", "Analytics").replace('{0}', '3');
+			document.getElementById("topSamplesLabel").innerHTML = getMsg("TOP_SAMPLES", "FieldReporting");
+			document.getElementById("recentKeyMsgsLabel").innerHTML = getMsg("RECENT_KEY_MESSAGES", "FieldReporting");
+			document.getElementById("samplesDispersedLabel").innerHTML = getMsg("SET_SAMPLES", "TABLET");			
+
+			document.getElementById("aeViewLabel").innerHTML = getMsg("View", "Common");
+			document.getElementById("productsSummaryTitle").innerHTML = getMsg("SUMMARY", "FieldReporting");
+			document.getElementById("aeTimePeriodLabel").innerHTML = getMsg("Period", "Analytics") + ": ";
+			document.getElementById("aeAllActivityBtn").innerHTML = getMsg("ALL_ACTIVITY", "FieldReporting");
+			document.getElementById("aeMyActivityBtn").innerHTML = getMsg("MCCP_MY_ACTIVITY", "Multichannel");
+			document.getElementById("aeTitleLabel").innerHTML = getMsg("APPROVED_EMAIL_PAGE_SUBTITLE", "ApprovedEmail");
+			document.getElementById("emailsSentLabel").innerHTML = getMsg("APPROVED_EMAIL_SENT", "Multichannel");
+			
+			document.getElementById("productsDetailedTableProdLabel").innerHTML = getFieldLabel("prodLabel", "Product");
+			document.getElementById("sampleTableProdLabel").innerHTML = getFieldLabel("prodLabel", "Product");
+			document.getElementById("callStatusFilterOptionLabel").innerHTML = getFieldLabel("callStatusLabel", "Call Status");
+			document.getElementById("callTypeFilterOptionLabel").innerHTML = getFieldLabel("callTypeLabel", "Call Type");
+
+			document.getElementById("aeProdTableProdLabel").innerHTML = getFieldLabel("prodLabel", "Product");
+			document.getElementById("emailsOpenedLabel").innerHTML = getFieldLabel("emailsOpenedLabel", "Opened") + " %";
+			document.getElementById("emailsClickedLabel").innerHTML = getFieldLabel("emailsClickedLabel", "Clicked") + " %";
+			document.getElementById("emailsWithFragmentsLabel").innerHTML = getFieldLabel("emailsWithFragmentsLabel", "Email Fragments") + " %";
+			document.getElementById("aeProdTableEmailsOpenedLabel").innerHTML = getFieldLabel("emailsOpenedLabel", "Opened") + " %";
+			document.getElementById("aeProdTableEmailsSentLabel").innerHTML = getMsg("APPROVED_EMAIL_SENT", "Multichannel");
+			document.getElementById("aeProdTableFragmentsLabel").innerHTML = getMsg("RECENT_FRAGMENTS", "FieldReporting");
+		}
+
+		/**
+		 * Update the date shown in the Call Summary section
+		 */
+		function updateCallDataUI(filteredCalls){
+			updateFilteredCallSummaryDates(filteredCalls);
+			updateFilteredCallInfo(filteredCalls);
+
+			resetCallData();
+			updateTopProdsTable(filteredCalls);
+			updateTopSamplesTable(filteredCalls);
+			updateRecentKeyMsgsTable(filteredCalls);
+		}
+
+		function resetCallData(){
+			delAllDataRows("productsDetailedTable");
+			delAllDataRows("sampleTable");
+			delAllDataRows("keyMsgTable");
+		}
+
+		function resetAeData(){
+			delAllDataRows("productsSummaryTable");
+		}
+
+		function updateFilteredCallSummaryDates(filteredCalls){
+			if (filteredCalls.length > 0){
+				document.getElementById("periodStartDate").innerHTML = dateStringToDate(filteredCalls[filteredCalls.length - 1].Call_Date_vod__c).toLocaleDateString();
+				document.getElementById("periodEndDate").innerHTML = dateStringToDate(filteredCalls[0].Call_Date_vod__c).toLocaleDateString();
+			}
+		}
+
+		function updateFilteredAeDates(filteredEmails){
+			if (filteredEmails.length > 0){
+				document.getElementById("aePeriodStartDate").innerHTML = new Date(filteredEmails[filteredEmails.length - 1].Email_Sent_Date_vod__c).toLocaleDateString();
+				document.getElementById("aePeriodEndDate").innerHTML = new Date(filteredEmails[0].Email_Sent_Date_vod__c).toLocaleDateString();
+			}
+		}
+
+		function updateFilteredCallInfo(filteredCalls){
+			var numCallsWithSamples = 0;
+			var numClmCalls = 0;
+			var numSamples = 0;
+
+			for (var callIndex in filteredCalls){
+				var callHasSample = false;
+
+				if (filteredCalls[callIndex].CLM_vod__c == "True" || filteredCalls[callIndex].CLM_vod__c == "1"){
+					numClmCalls++;
+				}
+				
+				for (var callSampleIndex in callSamples){
+					if (filteredCalls[callIndex].Id == callSamples[callSampleIndex].Call2_vod__c){
+						//call sample is associated with call in filtered calls
+						callHasSample = true;
+
+						if (callSamples[callSampleIndex].Quantity_vod__c != "" && parseInt(callSamples[callSampleIndex].Quantity_vod__c) > 0){
+							numSamples += parseInt(callSamples[callSampleIndex].Quantity_vod__c);
+						}
+					}
+				}
+				if (callHasSample){
+					numCallsWithSamples++;
+				}
+			}
+
+			var numCalls = filteredCalls.length;
+			var percentCallsWithSamples = 0;
+			var percentCallsWithCLM = 0;
+
+			if (numCallsWithSamples > 0 && numCalls > 0){
+				percentCallsWithSamples = numCallsWithSamples / numCalls;
+			}
+			if (numClmCalls > 0 && numCalls > 0){
+				percentCallsWithCLM = numClmCalls / numCalls;
+			}
+
+			document.getElementById("numCalls").innerHTML = numCalls;
+			document.getElementById("percentCallsWithSamples").innerHTML = (percentCallsWithSamples* 100).toFixed(0) + "%";
+			document.getElementById("samplesDispersed").innerHTML = numSamples;
+			
+			animate($('#callsWithSamplesCircle'), percentCallsWithSamples);
+			
+			if (missingFlds.indexOf("Call2_vod__c.CLM_vod__c") == -1){
+				document.getElementById("percentCallsWithCLM").innerHTML = (percentCallsWithCLM * 100).toFixed(0) + "%";
+				animate($('#callsWithCLMCircle'), percentCallsWithCLM);
+			}
+			else{
+				//no access to CLM_vod__c field - show no data message
+				document.getElementById("callSummaryCLMDataTable").style.display = "none";
+				document.getElementById("callSummaryCLMDataErrorDiv").innerHTML = getMsg("NO_RECORDS", "Common");
+			}
+		}
+
+		function updateTopProdsTable(filteredCalls){
+			var rowIter = 1;
+			var data = [];
+			var filteredCallIds = [];
+
+			if (filteredCalls.length > 0){
+				for (var index in filteredCalls){
+					filteredCallIds.push(filteredCalls[index].Id);
+				}
+
+				for (var callDetailIndex in callDetails){
+					if (filteredCallIds.indexOf(callDetails[callDetailIndex].Call2_vod__c) >= 0){
+						if (data[callDetails[callDetailIndex].Product_vod__c] == null){
+							data[callDetails[callDetailIndex].Product_vod__c] = {
+								prodName: getProdName(callDetails[callDetailIndex].Product_vod__c),
+								callIds: [callDetails[callDetailIndex].Call2_vod__c],
+								lastCallDate: ""
+							};
+						}
+						else{
+							data[callDetails[callDetailIndex].Product_vod__c].callIds.push(callDetails[callDetailIndex].Call2_vod__c);
+						}
+					}
+				}
+
+				//set most recent call
+				for (var dataIndex in data){
+
+					for (var callIndex in filteredCalls){
+						if (data[dataIndex].callIds.indexOf(filteredCalls[callIndex].Id) >= 0){
+							data[dataIndex].lastCallDate = dateStringToDate(filteredCalls[callIndex].Call_Date_vod__c).toLocaleDateString();
+						}
+					}
+				}
+
+				var sortedData = [];
+				for (var dataIndex in data){
+					sortedData.push(data[dataIndex]);
+				}		
+				sortedData.sort(function(a,b){return b.callIds.length - a.callIds.length});
+
+				for (var index in sortedData){
+					if (rowIter >= 4){
+						break;
+					}
+					addRow("productsDetailedTable", [sortedData[index].prodName, sortedData[index].callIds.length, sortedData[index].lastCallDate], rowIter++);
+				}
+			}
+
+			if (!doesTableHaveData("productsDetailedTable")){
+				showNoData("productsDetailedTable");
+			}
+		}
+
+		function updateTopSamplesTable(filteredCalls){
+			var rowIter = 1;
+			var data = [];
+			var numRows = 0;
+
+			for (var callIndex in filteredCalls){
+				for (var callSampleIndex in callSamples){
+					if (filteredCalls[callIndex].Id == callSamples[callSampleIndex].Call2_vod__c){
+						if (data[callSamples[callSampleIndex].Product_vod__c] == null){
+							data[callSamples[callSampleIndex].Product_vod__c] = {
+								prodId: callSamples[callSampleIndex].Product_vod__c,
+								qty: parseInt(callSamples[callSampleIndex].Quantity_vod__c),
+								prodName: getProdName(callSamples[callSampleIndex].Product_vod__c)
+							};
+							numRows += 1;
+						}
+						else{
+							data[callSamples[callSampleIndex].Product_vod__c].qty += parseInt(callSamples[callSampleIndex].Quantity_vod__c);
+						}
+					}
+				}
+			}
+			
+			var sortedData = [];
+			for (var dataIndex in data){
+				sortedData.push(data[dataIndex]);
+			}		
+			sortedData.sort(function(a,b){return b.qty - a.qty});
+
+			for (var dataIndex in sortedData){
+				addRow("sampleTable", [ sortedData[dataIndex].prodName, sortedData[dataIndex].qty ], rowIter++);
+
+				if (rowIter > 3){
+					break;
+				}
+			}
+
+			if (!doesTableHaveData("sampleTable")){
+				showNoData("sampleTable");
+			}
+		}
+
+		function updateRecentKeyMsgsTable(filteredCalls){
+			var rowIter = 1;
+		 	var data = [];
+
+			for (var callIndex in filteredCalls){
+				for (var callKeyMsgIndex in callKeyMsgs){
+					if (callKeyMsgs[callKeyMsgIndex].Call2_vod__c == filteredCalls[callIndex].Id){
+						data.push({
+							callKeyMsg: callKeyMsgs[callKeyMsgIndex],
+							call: filteredCalls[callIndex]
+						});
+					}
+				}
+			}
+
+			var sortedData = [];
+			for (var dataIndex in data){
+				sortedData.push(data[dataIndex]);
+			}		
+			sortedData.sort(function(a,b){return dateStringToDate(b.call.Call_Date_vod__c) - dateStringToDate(a.call.Call_Date_vod__c)});
+
+			for (var sortedDataIndex in sortedData){
+				addRow("keyMsgTable", [ getKeyMsgName(sortedData[sortedDataIndex].callKeyMsg.Key_Message_vod__c), dateStringToDate(sortedData[sortedDataIndex].call.Call_Date_vod__c).toLocaleDateString() ], rowIter++);
+
+				if (rowIter > 3){
+					break;
+				}
+			}
+
+			if (!doesTableHaveData("keyMsgTable")){
+				showNoData("keyMsgTable");
+			}
+		}
+
+		function filterChanged(){
+			var callStatusFilter = "";
+			var callTypeFilter = "";
+			var callStatusSelect = document.getElementById("callStatusSelect");
+			var callTypeSelect = document.getElementById("callTypeSelect");
+
+			if (callStatusSelect.selectedIndex > 0){
+				callStatusFilter = callStatusSelect.options[callStatusSelect.selectedIndex].value;
+			}
+			if (callTypeSelect.selectedIndex > 0){
+				callTypeFilter = callTypeSelect.options[callTypeSelect.selectedIndex].value;
+			}
+			
+			updateCallDataUI(getFilteredCalls(calls, callStatusFilter, callTypeFilter));
+			updateAeDataUI(getFilteredEmails(sentEmails));
+		}
+
+		function clearAllFilters(){
+			var callStatusSelect = document.getElementById("callStatusSelect");
+			var callTypeSelect = document.getElementById("callTypeSelect");
+			callStatusSelect.selectedIndex = 0;
+			callTypeSelect.selectedIndex = 0;
+
+			filterChanged();
+		}
+
+		function getFilteredCalls(allCalls, statusFilter, typeFilter){		
+			if (statusFilter != "" || typeFilter != "" || userId != ""){
+				var filteredCalls = [];
+
+				for (var index in allCalls){
+					if ((statusFilter != "" && allCalls[index].Status_vod__c != statusFilter) ||
+						(typeFilter != "" && allCalls[index].Call_Type_vod__c != typeFilter) || 
+						(userId != "" && !isCallCreatedByCurrentUser(userId, allCalls[index].Id)) ){
+						continue;
+					}
+					filteredCalls.push(allCalls[index]);
+				}
+				return filteredCalls;
+			}
+			else{
+				return allCalls;
+			}
+		}
+
+		function getFilteredEmails(allSentEmails){
+			var filteredEmails = [];
+			for (var index in allSentEmails){
+				if (userId != "" && allSentEmails[index].CreatedById != userId){
+					continue;
+				}
+				filteredEmails.push(allSentEmails[index]);
+			}
+			return filteredEmails;
+		}
+
+		function updateAeDataUI(filteredSentEmails){
+			if (showAeSection){
+				resetAeData();
+				updateAE(filteredSentEmails);
+			}
+			else{
+				hideAeSection();
+			}
+		}
+
+		function hideAeSection(){
+			document.getElementById("approvedEmailSection").style.display = "none";
+			document.getElementById("scrollDownArrow").style.display = "none";
+		}
+
+		function updateAE(filteredSentEmails){
+			var numEmailsWithFragments = 0;
+			var numEmailsOpened = 0;
+			var numEmailsClicked = 0;
+			var rowIter = 1;
+			var data = [];
+
+			for (var index in filteredSentEmails){
+				var opened = false;
+				if (filteredSentEmails[index].Email_Fragments_vod__c){
+					numEmailsWithFragments += 1;
+				}
+				if (filteredSentEmails[index].Opened_vod__c == "1"){
+					numEmailsOpened += 1;
+					opened = true;
+				}
+				if (filteredSentEmails[index].Clicked_vod__c == "1"){
+					numEmailsClicked += 1;
+				}
+				if (data[filteredSentEmails[index].Product_vod__c] == null){
+					data[filteredSentEmails[index].Product_vod__c] = {
+						prodId: filteredSentEmails[index].Product_vod__c,
+						prodName: filteredSentEmails[index].Product_Display_vod__c,
+						numEmails: 1,
+						numOpened: 0,
+						fragmentId: filteredSentEmails[index].Email_Fragments_vod__c,
+						fragmentValue: ""
+					};
+				}
+				else{
+					data[filteredSentEmails[index].Product_vod__c].numEmails += 1;
+					if (!data[filteredSentEmails[index].Product_vod__c].fragmentId){
+						data[filteredSentEmails[index].Product_vod__c].fragmentId = filteredSentEmails[index].Email_Fragments_vod__c;
+					}
+				}
+				if (opened){
+					data[filteredSentEmails[index].Product_vod__c].numOpened += 1;
+				}
+			}
+
+			updateFilteredAeDates(filteredSentEmails);
+			
+			var numEmails = filteredSentEmails.length;
+			var percentWithFrag = 0;
+			var percentOpened = 0;
+			var percentClicked = 0;
+			if (numEmailsWithFragments > 0 && numEmails > 0){
+				percentWithFrag = (numEmailsWithFragments / numEmails);
+			}
+			if (numEmailsOpened > 0 && numEmails > 0){
+				percentOpened = (numEmailsOpened / numEmails);
+			}
+			if (numEmailsClicked > 0 && numEmails > 0){
+				percentClicked = (numEmailsClicked / numEmails);
+			}
+
+			animate($('#fragCircle'), percentWithFrag);
+
+			if (missingFlds.indexOf("Sent_Email_vod__c.Clicked_vod__c") === -1){
+				document.getElementById("emailsClickedValue").innerHTML = (percentClicked * 100).toFixed(0) + "%";
+				animate($('#clickedCircle'), percentClicked);
+			}
+			else{
+				//no access to Clicked_vod__c field - show no data message
+				document.getElementById("emailsClickedDataTable").style.display = "none";
+				document.getElementById("emailsClickedDataErrorDiv").innerHTML = getMsg("NO_RECORDS", "Common");
+			}
+
+			if (missingFlds.indexOf("Sent_Email_vod__c.Opened_vod__c") === -1){
+				document.getElementById("emailsOpenedValue").innerHTML = (percentOpened * 100).toFixed(0) + "%";
+				animate($('#emailsOpenedCircle'), percentOpened);
+			}
+			else{
+				//no access to Opened_vod__c field - show no data message
+				document.getElementById("emailsOpenedDataTable").style.display = "none";
+				document.getElementById("emailsOpenedDataErrorDiv").innerHTML = getMsg("NO_RECORDS", "Common");
+			}
+			
+			document.getElementById("totalEmailValue").innerHTML = filteredSentEmails.length;
+			document.getElementById("percentEmailsWithFragmentsValue").innerHTML = (percentWithFrag * 100).toFixed(0) + "%";
+
+			for (var dataIndex in data){
+				if (rowIter >= 4){
+					break;
+				}
+				var openedPercent = 0;
+				if (data[dataIndex].numEmails > 0){
+					openedPercent = ((data[dataIndex].numOpened / data[dataIndex].numEmails) * 100).toFixed(0);
+				}
+
+                var fragIds = [];
+
+				if (data[dataIndex].prodId != ""){
+					if (data[dataIndex].fragmentId != ""){
+					    if (data[dataIndex].fragmentId) {
+                            fragIds = data[dataIndex].fragmentId.split(",");
+						}
+
+
+						if (fragIds.length >= 1){
+							var fragValues = [];
+
+							for (var fragIdIndex in fragIds){
+								for (var approvedDocsIndex in approvedDocs){
+									if (approvedDocs[approvedDocsIndex].Id == fragIds[fragIdIndex]){
+										fragValues.push(approvedDocs[approvedDocsIndex].Name);
+									}
+								}
+							}
+							data[dataIndex].fragmentValue = fragValues.join(", ");
+						}					
+					}
+
+					addRow("productsSummaryTable", [data[dataIndex].prodName, data[dataIndex].numEmails, openedPercent + "%", data[dataIndex].fragmentValue], rowIter++);
+				}
+			}
+
+			if (!doesTableHaveData("productsSummaryTable")){
+				showNoData("productsSummaryTable");
+			}
+		}
+
+		function getKeyMsgName(keyMsgId){
+			for (var index in keyMsgs){
+				if (keyMsgs[index].Id == keyMsgId){
+					return keyMsgs[index].Name;
+				}
+			}
+		}
+
+
+		
+		// utility funciton to align 0 degrees with top
+		// takes degrees and returns degrees - 45
+		function topAlign(degrees) {
+		    return degrees - 45;
+		}
+
+		// utility function to rotate a jQuery element
+		// takes element and the degree of rotation (from the top) 
+		function rotate(el, degrees) {
+			var degrees = topAlign(degrees || 0);
+			el.css(
+				'transform', 'rotate('+degrees+'deg)',
+				'-webkit-transform', 'rotate('+degrees+'deg)',
+				'-moz-transform', 'rotate('+degrees+'deg)',
+				'-ms-transform', 'rotate('+degrees+'deg)',
+				'-o-transform', 'rotate('+degrees+'deg)'
+			)
+		}
+
+		// function to draw semi-circle
+		// takes a jQuery element and a value (between 0 and 1)
+		// element must contain four .arc_q elements
+		function circle(el, normalisedValue) {
+			el.find('.arc_cover').css('display', '');
+			var degrees = normalisedValue * 360;
+			var counter = 1;
+			el.find('.arc_q').each(function(){
+				var angle = Math.min(counter * 90, degrees);
+				rotate($(this), -90 + angle);
+				counter++;
+			});
+			if (degrees > 90) {
+				el.find('.arc_cover').css('display', 'none');
+			}
+		}
+
+		// uses the the circle function to 'animate' drawing of the semi-circle
+		// incrementally increses the value passed by 0.01 up to the value required
+		function animate(el, normalisedValue, current) {
+			var current = current || 0;
+			circle(el, current);
+			if (current < normalisedValue) {
+				current += 0.01;
+				setTimeout(function () { animate(el, normalisedValue, current); }, 1);
+			}
+		}
+	</script>
+	
+	<body onload="init()">
+		<div id="callSummaryDiv">
+			<div class="pageHeaderDiv">
+				<table class="pageHeaderDivTable">
+					<tr>
+						<td align='left' class="pageHeaderDivTableTd">
+							<table>
+								<tr>
+									<td>
+										<div class="pageHeaderTitle" id="callSummaryLabel">Call Summary</div>
+									</td>
+									<td>
+										<div class="pageHeaderViewDetails" onclick='goToCallSummary();' id="callSummaryViewLabel">View</div>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td align='center' class="pageHeaderDivTableCenterTd">
+							<table class="activityButtonsTable">
+								<tr>
+									<td class="pageHeaderActivityBtnSelected" style="border-radius: 3px 0px 0px 3px;" id="callAllActivityBtn" onclick="allActivityClicked()">
+										All Activity
+									</td>
+									<td class="pageHeaderActivityBtnNotSelected" style="border-radius: 0px 3px 3px 0px;" id="callMyActivityBtn" onclick="myActivityClicked()">
+										My Activity
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td align='right' class="pageHeaderDivTableTd">
+							<table>
+								<tr>
+									<td>
+										<div class="timePeriodLabel" id="callSummaryTimePeriodLabel">Period: </div>
+									</td>
+									<td>
+										<div class="timePeriodValue" id="periodStartDate"></div>
+									</td>
+									<td>
+										<div class="timePeriodLabel">-</div>
+									</td>
+									<td>
+										<div class="timePeriodValue" id="periodEndDate"></div>
+									</td>
+									<td>
+										<div class="timePeriodImgDiv"><img src="images/calendar-icon.png" height="30"/></div>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<div style="margin-top: 20px; margin-bottom: 20px;margin-left:10px;">
+				<div class="filtersLabel" id="callSummaryFiltersLabel">Filters:</div>
+				<select class"filterDropdown" id="callStatusSelect" onchange="filterChanged()">
+					<option id="callStatusFilterOptionLabel">Call Status</option>
+				</select>
+				<select class"filterDropdown" id="callTypeSelect" onchange="filterChanged()">
+					<option id="callTypeFilterOptionLabel">Call Type</option>
+				</select>
+				<div class="clearFilters" onclick="clearAllFilters()" id="callSummaryClearFiltersLabel">Clear all filters</div>
+			</div>
+
+			<div style="margin-top: 20px; margin-bottom: 50px;margin-left:10px;">
+				<table style="width: 100%;border-spacing: 10px 5px;">
+					<tr>
+						<td style="background: white; width: 40%; border-radius: 3px;" onclick='goToCallSummary();'>
+							<div class="callSummaryDataDiv" >
+								<div class="dataBoxTitle" id="callsTotalLabel">TOTAL</div>
+								<div style="border-color: black; border-bottom: solid 1px #e4e4e4;margin-left: 40px;margin-right: 40px;padding-bottom: 20px;">
+									<table style="width: 100%; margin-top: 25px;">
+										<tr>
+											<td style="width: 75px;">
+												<img src="images/phone-icon.png" height="40" style="margin-top: 0px; margin-left: 0px;" />
+											</td>
+											<td>
+												<div style="font-size: 16px; letter-spacing: 0.1px; color: #4a4a4a; margin-left: 0px;vertical-align: middle; text-align: left;" id="totalCallsLabel">Calls</div>
+											</td>
+											<td>
+												<div style="font-size: 42px; color: #ff9e15;margin-left: 50px;vertical-align: middle;text-align: right;" id="numCalls"></div>
+											</td>
+										</tr>
+									</table>
+								</div>
+								<div style="margin-left: 40px;margin-right: 40px;">
+									<table style="width: 100%; margin-top: 25px;">
+										<tr>
+											<td style="width: 75px;">
+												<img src="images/samples-icon.png" height="40" style="margin-top: 0px; margin-left: 0px;" />
+											</td>
+											<td>
+												<div style="font-size: 16px; letter-spacing: 0.1px; color: #4a4a4a; margin-left: 0px;vertical-align: middle; text-align: left;" id="samplesDispersedLabel">Samples Dispersed</div>
+											</td>
+											<td>
+												<div style="font-size: 42px; color: #0d6797;margin-left: 50px;vertical-align: middle;text-align: right;" id="samplesDispersed"></div>
+											</td>
+										</tr>
+									</table>
+								</div>
+							</div>
+						</td>
+						<td style="background: white; width: 30%; border-radius: 3px;" onclick='goToCallSummary();'>
+							<div class="callSummaryDataDiv" >
+								<div class="dataBoxTitle" id="callsWithSamplesLabel">CALLS WITH SAMPLES</div>
+								<div style="width: 100%; margin-top: 30px;">
+									<table class="callSummaryDataArcTable">
+										<tr>
+											<td class="callSummaryDataArcTd">
+													<div class="circle" id='callsWithSamplesCircle'>
+														<div class="arc_q_bg"></div>
+														<div class="arc_q"></div>
+													    <div class="arc_q"></div>
+													    <div class="arc_q"></div>
+													    <div class="arc_q"></div>
+														<div class="arc_cover">
+															<div class="arc_q_bg_cover"></div>
+														</div>
+														<div style="height: 120px;">
+															<img src="images/calls-with-samples-icon.png" height="42" width="39" class="arc_center_img">
+														</div>
+													</div>
+											</td>
+											<td>
+												<div id="percentCallsWithSamples" style="vertical-align: middle; font-size: 42px; color: #0d6797;margin-left: 20px;"></div>
+											</td>
+										</tr>
+									</table>
+								</div>
+							</div>
+						</td>
+						<td style="background: white; width: 30%; border-radius: 3px;" onclick='goToCallSummary();'>
+							<div class="callSummaryDataDiv" >
+								<div class="dataBoxTitle" id="callsWithCLMLabel">CALLS WITH CLM</div>
+								<div style="width: 100%; margin-top: 30px;">
+									<table class="callSummaryDataArcTable" id="callSummaryCLMDataTable">
+										<tr>
+											<td class="callSummaryDataArcTd">
+													<div class="circle" id='callsWithCLMCircle'>
+														<div class="arc_q_bg"></div>
+														<div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+													    <div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+													    <div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+													    <div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+														<div class="arc_cover">
+															<div class="arc_q_bg_cover"></div>
+														</div>
+														<div style="height: 120px;">
+															<img src="images/c-l-m-icon.png" height="42" width="39" class="arc_center_img">
+														</div>
+													</div>
+											</td>
+											<td>
+												<div id="percentCallsWithCLM" style="vertical-align: middle; font-size: 42px; color: #ff9e15;margin-left: 20px;"></div>
+											</td>
+										</tr>
+									</table>
+									<div id="callSummaryCLMDataErrorDiv"></div>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<table class="callTablesTable">
+				<tr>
+					<th id="topProdsLabel">Top 3 Products Detailed</th>
+					<th id="topSamplesLabel">Top 3 Samples</th>
+					<th id="recentKeyMsgsLabel">Recent Key Messages</th>
+				</tr>
+				<tr>
+					<td align="center" style="vertical-align: top;">
+						<table id="productsDetailedTable" class="dataTable" style="width: 100%">
+							<tr>
+								<th id="productsDetailedTableProdLabel" style="border-radius: 3px 0px 0px 0px;">Product</th>
+								<th id="productsDetailedTableCallsLabel">Calls</th>
+								<th id="productsDetailedTableMostRecentCallLabel" style="border-radius: 0px 3px 0px 0px;">Most Recent Call</th>
+							</tr>
+						</table>
+					</td>
+					<td align="center" style="vertical-align: top;">
+						<table id="sampleTable" class="dataTable" style="width: 100%">
+							<tr>
+								<th id="sampleTableProdLabel" style="border-radius: 3px 0px 0px 0px;">Product</th>
+								<th id="sampleTableQTYLabel" style="border-radius: 0px 3px 0px 0px;">QTY</th>
+							</tr>
+						</table>
+					</td>
+					<td align="center" style="vertical-align: top;">
+						<table id="keyMsgTable" class="dataTable" style="width: 100%">
+							<tr>
+								<th id="keyMsgTableMessageLabel" style="border-radius: 3px 0px 0px 0px;">Message</th>
+								<th id="keyMsgTableCallDateLabel" style="border-radius: 0px 3px 0px 0px;">Call Date</th>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+
+			<div style="height: 50px; width: 100%; padding-top: 20px;" id="scrollDownArrow">
+				<div style="width:50px; height: 50px; margin: 0 auto;" onclick="window.scrollBy(0, 1000);">
+					<img src="images/fa-angle-down.png" height="25"/>
+				</div>
+			</div>
+		</div>
+		<div id="approvedEmailSection">
+			<div class="pageHeaderDiv">
+				<table class="pageHeaderDivTable">
+					<tr>
+						<td align='left' class="pageHeaderDivTableTd">
+							<table>
+								<tr>
+									<td>
+										<div class="pageHeaderTitle" id="aeTitleLabel">Approved Email</div>
+									</td>
+									<td>
+										<div class="pageHeaderViewDetails" onclick='goToApprovedEmail();' id="aeViewLabel">View</div>
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td align='center' class="pageHeaderDivTableCenterTd">
+							<table class="activityButtonsTable">
+								<tr>
+									<td class="pageHeaderActivityBtnSelected" style="border-radius: 3px 0px 0px 3px;" id="aeAllActivityBtn" onclick="allActivityClicked()">
+										All Activity
+									</td>
+									<td class="pageHeaderActivityBtnNotSelected" style="border-radius: 0px 3px 3px 0px;" id="aeMyActivityBtn" onclick="myActivityClicked()">
+										My Activity
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td align='right' class="pageHeaderDivTableTd">
+							<table>
+								<tr>
+									<td>
+										<div class="timePeriodLabel" id="aeTimePeriodLabel">Period: </div>
+									</td>
+									<td>
+										<div class="timePeriodValue" id="aePeriodStartDate"></div>
+									</td>
+									<td>
+										<div class="timePeriodLabel">-</div>
+									</td>
+									<td>
+										<div class="timePeriodValue" id="aePeriodEndDate"></div>
+									</td>
+									<td>
+										<div class="timePeriodImgDiv"><img src="images/calendar-icon.png" height="30"/></div>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+			<div style="margin-top: 20px;">
+				<table class="aeTopDataTable">
+					<tr>
+						<td class="aeTopDataTableCell" onclick='goToApprovedEmail();'>
+							<div class="aeTopDataTableCellContentDiv">
+								<div class="dataBoxTitle" id="emailsSentLabel">TOTAL EMAILS</div>
+								<div style="width: 100%; margin-top: 30px;">
+									<table class="callSummaryDataArcTable">
+										<tr>
+											<td class="callSummaryDataArcTd">
+												<div class="totalEmailCircle">
+													<span >
+														<img src="images/mailbox-icon.png" height="40" style="vertical-align: middle; margin-top: 30px;" >
+													</span>
+												</div>
+											</td>
+											<td>
+												<div id="totalEmailValue" style="vertical-align: middle; font-size: 42px; color: #ff9e15;margin-left: 20px;"></div>
+											</td>
+										</tr>
+									</table>
+								</div>
+							</div>
+						</td>
+						<td class="aeTopDataTableCell" onclick='goToApprovedEmail();'>
+							<div class="aeTopDataTableCellContentDiv">
+								<div class="dataBoxTitle" id="emailsOpenedLabel">EMAILS OPENED</div>
+								<div style="width: 100%; margin-top: 30px;">
+									<table class="callSummaryDataArcTable" id="emailsOpenedDataTable">
+										<tr>
+											<td class="callSummaryDataArcTd">
+												<div>
+													<div class="circle" id='emailsOpenedCircle'>
+														<div style="height: 120px;">
+															<img src="images/email-opened-icon.png" height="42" width="39" class="arc_center_img">
+														</div>
+														<div class="arc_q_bg"></div>
+														<div class="arc_q"></div>
+													    <div class="arc_q"></div>
+													    <div class="arc_q"></div>
+													    <div class="arc_q"></div>
+														<div class="arc_cover">
+															<div class="arc_q_bg_cover"></div>
+														</div>
+													</div>
+												</div>
+											</td>
+											<td>
+												<div id="emailsOpenedValue" style="vertical-align: middle; font-size: 42px; color: #0d6797;margin-left: 20px;"></div>
+											</td>
+										</tr>
+									</table>
+									<div id="emailsOpenedDataErrorDiv"></div>
+								</div>
+							</div>
+						</td>
+						<td class="aeTopDataTableCell" onclick='goToApprovedEmail();'>
+							<div class="aeTopDataTableCellContentDiv">
+								<div class="dataBoxTitle" id="emailsClickedLabel">EMAILS CLICKED</div>
+								<div style="width: 100%; margin-top: 30px;">
+									<table class="callSummaryDataArcTable" id="emailsClickedDataTable">
+										<tr>
+											<td class="callSummaryDataArcTd">
+												<div>
+													<div class="circle" id='clickedCircle'>
+														<div class="arc_q_bg"></div>
+														<div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+													    <div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+													    <div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+													    <div class="arc_q" style="border-color:transparent #ff9e15 transparent transparent"></div>
+														<div class="arc_cover">
+															<div class="arc_q_bg_cover"></div>
+														</div>
+														<div style="height: 120px;">
+															<img src="images/emails-clicked-icon.png" height="42" width="39" class="arc_center_img">
+														</div>
+													</div>
+												</div>
+											</td>
+											<td>
+												<div id="emailsClickedValue" style="vertical-align: middle; font-size: 42px; color: #ff9e15;margin-left: 20px;"></div>
+											</td>
+										</tr>
+									</table>
+									<div id="emailsClickedDataErrorDiv"></div>
+								</div>
+							</div>
+						</td>
+						<td class="aeTopDataTableCell" onclick='goToApprovedEmail();'>
+							<div class="aeTopDataTableCellContentDiv">
+								<div class="dataBoxTitle" id="emailsWithFragmentsLabel">EMAILS WITH FRAGMENTS</div>
+								<div style="width: 100%; margin-top: 30px;">
+									<table class="callSummaryDataArcTable">
+										<tr>
+											<td class="callSummaryDataArcTd">
+												<div>
+													<div class="circle" id='fragCircle'>
+														<div style="height: 120px;">
+															<img src="images/postcard-icon.png" width="47" class="arc_center_img" style="padding-top: 5px;">
+														</div>
+														<div class="arc_q_bg"></div>
+														<div class="arc_q"></div>
+													    <div class="arc_q"></div>
+													    <div class="arc_q"></div>
+													    <div class="arc_q"></div>
+														<div class="arc_cover">
+															<div class="arc_q_bg_cover"></div>
+														</div>
+													</div>
+												</div>
+											</td>
+											<td>
+												<div id="percentEmailsWithFragmentsValue" style="vertical-align: middle; font-size: 42px; color: #0d6797;margin-left: 20px;"></div>
+											</td>
+										</tr>
+									</table>
+								</div>
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div style="margin-top: 20px; margin-bottom: 20px; margin-left: 10px;">
+				<span class="dataListHeader" id="productsSummaryTitle">Product summary</span>
+			</div>
+			<div style="margin-left: 10px; margin-right: 10px;">
+				<table id="productsSummaryTable" class="dataTable" width="100%">
+					<tr>
+						<th id="aeProdTableProdLabel" style="border-radius: 3px 0px 0px 0px;">Product</th>
+						<th id="aeProdTableEmailsSentLabel">Emails Sent</th>
+						<th id="aeProdTableEmailsOpenedLabel">Opened %</th>
+						<th id="aeProdTableFragmentsLabel" style="border-radius: 0px 3px 0px 0px;">Recent Fragments</th>
+					</tr>
+				</table>
+			</div>
+		</div>		
+
+		<div id="ResultsDiv" style="margin-bottom: 50px;"></div>
+	</body>
+</html>

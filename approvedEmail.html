@@ -1,0 +1,78 @@
+<html>
+	<head>
+		<script src="approvedEmail.js" type="text/javascript"></script>
+		<script src="scripts.js" type="text/javascript"></script>
+		<script src="veevaMessages.js" type="text/javascript"></script>
+		<script src="q/q.js"></script>
+		<script src="jquery-ui-1.11.4/external/jquery/jquery.js"></script>
+		<script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
+		<script src="scripts/lib.js"></script>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body onload="init()">
+		<div class="pageHeaderDiv">
+			<table class="pageHeaderDivTable">
+				<tr>
+					<td align='left' class="pageHeaderDivTableTd" onclick="goBack();">
+						<img src="images/fa-angle-left.png" height="18" style="display: inline-block;"/>
+						<div class="pageHeaderTitle" id="aeTitleLabel">Approved Email</div>
+					</td>
+					<td align='center' class="pageHeaderDivTableTd">
+						<table class="activityButtonsTable">
+							<tr>
+								<td class="pageHeaderActivityBtnSelected" style="border-radius: 3px 0px 0px 3px;" id="allActivityBtn" onclick="aeAllActivityClicked()">
+									All Activity
+								</td>
+								<td class="pageHeaderActivityBtnNotSelected" style="border-radius: 0px 3px 3px 0px;" id="myActivityBtn" onclick="aeMyActivityClicked()">
+									My Activity
+								</td>
+							</tr>
+						</table>
+					</td>
+					<td align='right' class="pageHeaderDivTableTd">
+						<table id="timePeriodTable">
+							<tr>
+								<td>
+									<div class="timePeriodLabel" id="timePeriodLabel">Period: </div>
+								</td>
+								<td>
+									<div class="timePeriodValue" id="periodStartDate"></div>
+								</td>
+								<td>
+									<div class="timePeriodLabel">-</div>
+								</td>
+								<td>
+									<div class="timePeriodValue" id="periodEndDate"></div>
+								</td>
+								<td>
+									<div class="timePeriodImgDiv"><img src="images/calendar-icon.png" height="30"/></div>
+								</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</div>
+		<div>
+			<div style="margin-top: 50px;">
+				<table style="border-collapse: collapse;">
+					<tr>
+						<td style="width: 50px;">
+							
+						</td>
+						<td>
+							<div class="tabSelected" id="fragsAvailableTab" onclick="fragsAvailableTabClicked()">
+								Fragments Available
+							</div>
+						</td>
+					</tr>
+				</table>
+			</div>
+			<div style="height: 5px; background: #0d6797; width: 100%"></div>
+		</div>
+		<div id="dataTblDiv" style="margin-top: 50px; margin-left: 10px;margin-right: 10px;">
+			
+		</div>
+		<div id="ResultsDiv" style="margin-bottom: 50px;"></div>
+	</body>
+</html>

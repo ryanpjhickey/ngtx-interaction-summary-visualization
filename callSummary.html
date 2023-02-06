@@ -1,0 +1,94 @@
+<html>
+	<head>
+		<script src="scripts.js" type="text/javascript"></script>
+		<script src="callSummary.js" type="text/javascript"></script>
+		<script src="veevaMessages.js" type="text/javascript"></script>
+		<script src="q/q.js"></script>
+		<script src="jquery-ui-1.11.4/external/jquery/jquery.js"></script>
+		<script src="jquery-ui-1.11.4/jquery-ui.min.js"></script>
+		<script src="scripts/lib.js"></script>
+		<link rel="stylesheet" href="styles.css">
+	</head>
+	<body onload="initCallSummary()">
+		<div class="pageHeaderDiv">
+				<table class="pageHeaderDivTable">
+					<tr>
+						<td align='left' class="pageHeaderDivTableTd" onclick="goBack();">
+							<img src="images/fa-angle-left.png" height="18" style="display: inline-block;"/>
+							<div class="pageHeaderTitle" id="callSummaryTitle">Call Summary</div>
+						</td>
+						<td align='center' class="pageHeaderDivTableCenterTd">
+							<table class="activityButtonsTable">
+								<tr>
+									<td class="pageHeaderActivityBtnSelected" style="border-radius: 3px 0px 0px 3px;" id="callAllActivityBtn" onclick="allActivityClicked()">
+										All Activity
+									</td>
+									<td class="pageHeaderActivityBtnNotSelected" style="border-radius: 0px 3px 3px 0px;" id="callMyActivityBtn" onclick="myActivityClicked()">
+										My Activity
+									</td>
+								</tr>
+							</table>
+						</td>
+						<td align='right' class="pageHeaderDivTableTd">
+							<table>
+								<tr>
+									<td>
+										<div class="timePeriodLabel" id="callSummaryTimePeriodLabel">Period: </div>
+									</td>
+									<td>
+										<div class="timePeriodValue" id="periodStartDate"></div>
+									</td>
+									<td>
+										<div class="timePeriodLabel">-</div>
+									</td>
+									<td>
+										<div class="timePeriodValue" id="periodEndDate"></div>
+									</td>
+									<td>
+										<div class="timePeriodImgDiv"><img src="images/calendar-icon.png" height="30"/></div>
+									</td>
+								</tr>
+							</table>
+						</td>
+					</tr>
+				</table>
+			</div>
+
+		<div class="dataListSection" style="margin-left: 10px;">
+			<div class="dataListHeader" id="keyMsgsTitle">Key Messages</div>
+			<table id="keyMsgsTable" class="dataTable" width="100%">
+				<tr>
+					<th id="keyMsgNameLabel" style="border-radius: 3px 0px 0px 0px;">Message</th>
+					<th id="keyMsgDescLabel">Description</th>
+					<th id="keyMsgCategoryLabel">Category</th>
+					<th id="keyMsgProdLabel">Product</th>
+					<th id="keyMsgReactionLabel">Reaction</th>
+					<th id="keyMsgCallDateLabel" style="border-radius: 0px 3px 0px 0px;">Call Date</th>
+				</tr>
+			</table>
+		</div>
+		<div class="dataListSection" style="margin-left: 10px;">
+			<div class="dataListHeader" id="samplesTitle">Samples and Promotional Items</div>
+			<table id="samplesTable" class="dataTable" width="100%">
+				<tr>
+					<th id="sampleTableProdLabel" style="border-radius: 3px 0px 0px 0px;">Product</th>
+					<th id="sampleTableProdTypeLabel">Product Type</th>
+					<th id="sampleTableCallDateLabel">Most Recent Call</th>
+					<th id="sampleTableQTYLabel" style="border-radius: 0px 3px 0px 0px;">QTY</th>
+				</tr>
+			</table>
+		</div>
+		<div class="dataListSection" style="margin-left: 10px;">
+			<div class="dataListHeader" id="callObjectivesTitle">Call Objectives</div>
+			<table id="callObjectiveTable" class="dataTable" width="100%">
+				<tr>
+					<th id="callObjectiveNameLabel" style="border-radius: 3px 0px 0px 0px;">Name</th>
+					<th id="callObjectiveProdLabel">Product</th>
+					<th id="callObjectiveFromLabel">From Date</th>
+					<th id="callObjectiveToLabel" style="border-radius: 0px 3px 0px 0px;">To Date</th>
+				</tr>
+			</table>
+		</div>
+		<div id="ResultsDiv" style="margin-bottom: 50px;"></div>
+	</body>
+</html>

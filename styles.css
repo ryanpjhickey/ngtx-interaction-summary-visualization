@@ -1,0 +1,298 @@
+body {
+	font-family: "HelveticaNeue-Light", "Helvetica Neue Light", "Helvetica Neue", Helvetica, Arial, "Lucida Grande", sans-serif;
+	background: #F5F5F5;
+	margin: 0px;
+	padding: 0px;
+}
+.pageHeaderTitle{
+	display:inline-block;
+	margin-left:10px;
+	margin-right:10px;
+	font-size: 24px;
+  	font-weight: bold;
+  	color: #4a4a4a;
+}
+.pageHeaderDiv{
+	background: white;
+	padding-top: 20px;
+	padding-bottom: 20px;
+}
+.pageHeaderDivTable{
+	width: 100%;
+}
+.pageHeaderDivTableTd{
+	width: 35%
+}
+.pageHeaderDivTableCenterTd{
+	width: 30%
+}
+.pageHeaderViewDetails{
+	display:inline-block;
+	margin-right:10px;
+	font-size: 16px;
+  	font-weight: bold;
+  	letter-spacing: 0.1px;
+  	color: #4a90e2;
+}
+.activityButtonsTable{
+	border: solid 1px #ff9e15;
+	border-radius: 3px;
+	border-collapse: collapse;
+}
+.pageHeaderActivityBtnSelected{
+	
+	font-size: 16px;
+  	letter-spacing: 0.1px;
+  	color: white;
+  	text-align: center;
+  	background-color: #ff9e15;
+  	padding-left: 10px;
+  	padding-right: 10px;
+  	padding-top: 10px;
+  	padding-bottom: 10px;
+}
+.pageHeaderActivityBtnNotSelected{
+	
+	font-size: 16px;
+  	letter-spacing: 0.1px;
+  	color: #ff9e15;	
+  	text-align: center;
+  	background-color: white;
+  	padding-left: 10px;
+  	padding-right: 10px;
+}
+.timePeriodLabel{
+	margin-top: 10px;
+	margin-left:10px;
+	color: #4a4a4a;
+	font-size: 16px;
+	letter-spacing: 0.1px;
+}
+.timePeriodValue{
+	margin-top: 10px;
+	margin-left:10px;
+	color: #4a4a4a;
+	font-size: 16px;
+	letter-spacing: 0.1px;
+	font-weight: bold;
+}
+.timePeriodImgDiv{
+	margin-left:10px;
+}
+.filtersLabel{
+	display:inline-block;
+	margin-right:10px;
+	font-size: 16px;
+  	font-weight: normal;
+  	letter-spacing: 0.1px;
+  	color: #4a4a4a;
+}
+.filterDropdown{
+	display:inline-block;
+	margin-left:20px;
+}
+.clearFilters{
+	display:inline-block;
+	margin-left:20px;
+	font-size: 16px;
+	letter-spacing: 0.1px;
+  	color: #4a90e2;
+}
+.callSummaryDataDiv{
+	background: white;
+	width: 100%;
+	border-radius: 3px;"
+	margin-bottom: 50px;
+	min-height: 230px;
+}
+.callSummaryDataArcTable{
+	margin-top: 50px;
+	display: block;
+	margin: auto;
+}
+.callSummaryDataArcTd{
+	width: 90px;
+	height: 90px;
+	padding-left: 10px;"
+}
+.dataBoxTitle{
+	font-size: 15px;
+  	font-weight: bold;
+  	font-stretch: condensed;
+  	letter-spacing: 0.1px;
+  	color: #9b9b9b;
+  	margin-left: 10px;
+  	margin-top: 10px;
+}
+.callTablesTable{
+	width: 100%;
+	margin-bottom: 20px;
+	border-spacing: 10px 5px;
+}
+table.callTablesTable th{
+	font-weight: bold;
+	margin-bottom: 20px;
+	text-align: left;
+	color: #4a4a4a;
+	letter-spacing: 0.1px;
+	font-size: 16px;
+}
+.dataTable{
+	border-collapse: collapse;
+	margin-right: 20px;
+	border-radius: 30px 30px 0px 0px;
+}
+table.dataTable th{
+	padding: 10px;
+	font-weight: bold;
+	background-color: #0d6797;
+	color: white;
+	text-align: left;
+}
+table.dataTable td{
+	padding: 15px;
+}
+table.dataTable tr:nth-child(even){
+	 background-color: #E4E4E4;
+}
+table.dataTable tr:nth-child(odd){
+	 background-color: #FFFFFF;
+}
+#callSummaryDiv{
+	width: 100%;
+	margin-bottom: 20px;
+}
+.aeTopDataTable{
+	width: 100%;
+	border-spacing: 10px 5px;
+}
+.aeTopDataTableCell{
+	background: white;
+	border-radius: 3px;
+}
+.aeTopDataTableCellContentDiv{
+	width: 100%; 
+	height: 230px; 
+	display:inline-block; 
+	margin-left: 0px;
+	vertical-align: top; 
+	border-radius: 3px;
+}
+.totalEmailCircle{
+	width: 100px;
+	height: 100px;
+	border-radius:50px;
+	line-height:100px;
+	text-align:center;
+	background: #FF9E15;
+	vertical-align: middle;
+}
+.totalEmailValue{
+	font-size: 42px;
+	color: #FF9E15;
+	vertical-align: middle;
+}
+.percentEmailsWithFragmentsValue{
+	font-size: 42px;
+	color: #0d6797;
+}
+.dataListHeader{
+	font-weight: bold;
+	margin-bottom: 10px;
+	text-align: left;
+	color: #4a4a4a;	
+	letter-spacing: 0.1px;
+	font-size: 16px;
+}
+.dataListSection{
+	margin-top: 20px;
+	margin-bottom: 40px;
+}
+.circle {
+    position:relative;
+	width: 120px;
+	height: 120px;
+}
+.arc_q {
+    position:absolute;
+    top:0;
+    left:0;
+    width:100px;
+    height:100px;
+    border-radius:50%;
+    border:10px solid;
+	border-color:transparent #0d6797 transparent transparent;
+	transform: rotate(-45deg);
+	-webkit-transform: rotate(-45deg);
+	-moz-transform: rotate(-45deg);
+	-ms-transform: rotate(-45deg);
+	-o-transform: rotate(-45deg);
+}
+.arc_q_bg{
+    position:absolute;
+    top:0;
+    left:0;
+    width:100px;
+    height:100px;
+    border-radius:50%;
+    border:10px solid;
+	border-color:#e4e4e4;
+	transform: rotate(-45deg);
+	-webkit-transform: rotate(-45deg);
+	-moz-transform: rotate(-45deg);
+	-ms-transform: rotate(-45deg);
+	-o-transform: rotate(-45deg);
+}
+.arc_q_bg_cover{
+    top:0;
+    left:0;
+    width:100px;
+    height:100px;
+    border-radius:50% 0 0 0;
+    border:10px solid;
+	border-color:#e4e4e4;
+}
+.arc_cover {
+    position:absolute;
+    top:0;
+    left:0;
+    width:60px;
+    height:60px;
+	background-color: white;
+	z-index: 1;
+	overflow:hidden;
+}
+.arc_center_img{
+	position: absolute;
+	vertical-align: middle; 
+	margin-top: 40px; 
+	margin-left: 40px;
+	z-index: 5
+}
+.tabSelected{
+	background: #0d6797;
+	border-radius: 3px 3px 0px 0px;
+	color: white;
+	padding: 10px 30px 10px 30px;
+	font-size: 24px;
+  	font-weight: bold;
+}
+.tabNotSelected{
+	background: white;
+	border-radius: 3px 3px 0px 0px;
+	color: #9b9b9b;
+	padding: 10px 30px 10px 30px;
+	font-size: 24px;
+  	font-weight: bold;
+}
+.fragmentDataTableDiv{
+	margin-top: 50px;
+}
+
+.fragmentDataTableTh{
+	padding: 10px;
+	font-weight: bold;
+	background-color: #0d6797;
+	color: white;
+	text-align: left;
+}
